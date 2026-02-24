@@ -14,6 +14,7 @@ export default class OmniFocusBridgePlugin extends Plugin {
 	private statusBarEl: HTMLElement | null = null;
 	private syncEngine: SyncEngine | null = null;
 	private cache: CacheManager | null = null;
+	private isSyncing = false;
 
 	async onload() {
 		await this.loadSettings();
@@ -42,7 +43,7 @@ export default class OmniFocusBridgePlugin extends Plugin {
 		// Status bar
 		this.statusBarEl = this.addStatusBarItem();
 		this.statusBarEl.addClass("omnifocus-bridge-status");
-		this.statusBarEl.addEventListener("click", () => this.syncNow());
+		this.registerDomEvent(this.statusBarEl, "click", () => this.syncNow());
 		await this.updateStatusBar();
 
 		// Commands
@@ -79,6 +80,12 @@ export default class OmniFocusBridgePlugin extends Plugin {
 			return;
 		}
 
+		if (this.isSyncing) {
+			new Notice("Sync already in progress.");
+			return;
+		}
+
+		this.isSyncing = true;
 		this.setStatusBar("syncing...");
 		new Notice("Syncing with OmniFocus...");
 
@@ -97,6 +104,8 @@ export default class OmniFocusBridgePlugin extends Plugin {
 			console.error("OmniFocus sync failed:", err);
 			new Notice(`Sync failed: ${msg}`);
 			this.setStatusBar("error");
+		} finally {
+			this.isSyncing = false;
 		}
 	}
 

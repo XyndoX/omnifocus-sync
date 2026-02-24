@@ -1,8 +1,6 @@
 import type { IDMap } from "../types";
 import type { DataAdapter } from "obsidian";
 
-const EMPTY_MAP: IDMap = { tasks: {}, projects: {} };
-
 export class IDMapper {
 	private filePath: string;
 
@@ -16,12 +14,12 @@ export class IDMapper {
 	async load(): Promise<IDMap> {
 		try {
 			const exists = await this.adapter.exists(this.filePath);
-			if (!exists) return { ...EMPTY_MAP };
+			if (!exists) return { tasks: {}, projects: {} };
 
 			const raw = await this.adapter.read(this.filePath);
 			return JSON.parse(raw) as IDMap;
 		} catch {
-			return { ...EMPTY_MAP };
+			return { tasks: {}, projects: {} };
 		}
 	}
 

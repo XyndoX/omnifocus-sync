@@ -89,6 +89,28 @@ describe("renderTaskLine", () => {
 		const line = renderTaskLine(task, settings);
 		expect(line).not.toContain("⏱️");
 	});
+
+	it("sanitizes tag names with spaces", () => {
+		const task = makeTask({
+			tags: [{ id: "t1", name: "High Priority" }],
+		});
+		const line = renderTaskLine(task, DEFAULT_SETTINGS);
+		expect(line).toContain("#of/High-Priority");
+		expect(line).not.toContain("#of/High Priority");
+	});
+
+	it("renders OmniFocus deep link when enabled", () => {
+		const task = makeTask({ id: "abc123" });
+		const settings = { ...DEFAULT_SETTINGS, showOFLink: true };
+		const line = renderTaskLine(task, settings);
+		expect(line).toContain("[OF](omnifocus:///task/abc123)");
+	});
+
+	it("hides OmniFocus deep link when disabled", () => {
+		const task = makeTask({ id: "abc123" });
+		const line = renderTaskLine(task, DEFAULT_SETTINGS);
+		expect(line).not.toContain("omnifocus:///task/");
+	});
 });
 
 describe("sortTasks", () => {

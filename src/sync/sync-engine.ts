@@ -1,4 +1,4 @@
-import type { Vault } from "obsidian";
+import type { Vault, TFile } from "obsidian";
 import type {
 	OFTask,
 	OFProject,
@@ -16,6 +16,10 @@ import {
 import { renderProjectFile, renderInboxFile } from "../renderer/markdown-renderer";
 import type { CacheManager } from "../data/cache-manager";
 import type { IDMapper } from "../data/id-mapper";
+
+function sanitizeFilename(name: string): string {
+	return name.replace(/[\\/:*?"<>|]/g, "_").trim();
+}
 
 export class SyncEngine {
 	constructor(
@@ -72,7 +76,7 @@ export class SyncEngine {
 		const idMap = await this.idMapper.load();
 
 		for (const project of projectsWithTasks) {
-			const filePath = `${this.settings.syncFolderPath}/${project.name}.md`;
+			const filePath = `${this.settings.syncFolderPath}/${sanitizeFilename(project.name)}.md`;
 			const content = renderProjectFile(project, syncedAt, this.settings);
 			await this.writeFile(filePath, content);
 
@@ -114,8 +118,8 @@ export class SyncEngine {
 
 	private async writeFile(path: string, content: string): Promise<void> {
 		const existing = this.vault.getAbstractFileByPath(path);
-		if (existing) {
-			await this.vault.modify(existing as any, content);
+		if (existing && "extension" in existing) {
+			await this.vault.modify(existing as TFile, content);
 		} else {
 			await this.vault.create(path, content);
 		}

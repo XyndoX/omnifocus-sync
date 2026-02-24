@@ -4,6 +4,10 @@ function formatDate(iso: string): string {
 	return iso.slice(0, 10);
 }
 
+function sanitizeTag(name: string): string {
+	return name.replace(/\s+/g, "-");
+}
+
 export function renderTaskLine(task: OFTask, settings: PluginSettings): string {
 	const checkbox = task.completed ? "- [x]" : "- [ ]";
 	const parts: string[] = [checkbox, task.name];
@@ -18,7 +22,7 @@ export function renderTaskLine(task: OFTask, settings: PluginSettings): string {
 
 	if (settings.showTags && task.tags.length > 0) {
 		const tagStr = task.tags
-			.map((t) => `#${settings.tagPrefix}/${t.name}`)
+			.map((t) => `#${settings.tagPrefix}/${sanitizeTag(t.name)}`)
 			.join(" ");
 		parts.push(`🏷️ ${tagStr}`);
 	}
@@ -29,6 +33,10 @@ export function renderTaskLine(task: OFTask, settings: PluginSettings): string {
 
 	if (task.completed && task.completionDate) {
 		parts.push(`✅ ${formatDate(task.completionDate)}`);
+	}
+
+	if (settings.showOFLink) {
+		parts.push(`[OF](omnifocus:///task/${task.id})`);
 	}
 
 	parts.push(`<!-- of:${task.id} -->`);
