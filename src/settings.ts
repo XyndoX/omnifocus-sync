@@ -65,6 +65,36 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// Sync section
+		containerEl.createEl("h3", { text: "Sync" });
+
+		new Setting(containerEl)
+			.setName("Sync interval")
+			.setDesc("How often to automatically sync with OmniFocus.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("manual", "Manual")
+					.addOption("1", "Every 1 minute")
+					.addOption("5", "Every 5 minutes")
+					.addOption("15", "Every 15 minutes")
+					.addOption("30", "Every 30 minutes")
+					.setValue(this.plugin.settings.syncInterval)
+					.onChange(async (value) => {
+						this.plugin.settings.syncInterval = value as "manual" | "1" | "5" | "15" | "30";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Sync on startup")
+			.setDesc("Automatically sync when Obsidian starts.")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.syncOnStartup).onChange(async (value) => {
+					this.plugin.settings.syncOnStartup = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
 		// Rendering section
 		containerEl.createEl("h3", { text: "Rendering" });
 

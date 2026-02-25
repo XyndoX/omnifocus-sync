@@ -65,14 +65,14 @@ describe("SyncEngine", () => {
 		const projects: OFProject[] = [
 			{
 				id: "p1", name: "My Project", note: null, status: "active",
-				dueDate: null, deferDate: null, sequential: false, folderName: null,
+				dueDate: null, deferDate: null, sequential: false, folderName: null, folderPath: null,
 			},
 		];
 		const tags: OFTag[] = [];
 
 		vi.mocked(runJXA)
-			.mockResolvedValueOnce(JSON.stringify(tasks))
 			.mockResolvedValueOnce(JSON.stringify(projects))
+			.mockResolvedValueOnce(JSON.stringify(tasks))
 			.mockResolvedValueOnce(JSON.stringify(tags));
 
 		const result = await engine.sync();
@@ -105,12 +105,12 @@ describe("SyncEngine", () => {
 		}];
 		const projects: OFProject[] = [{
 			id: "p1", name: "TestProj", note: null, status: "active",
-			dueDate: null, deferDate: null, sequential: false, folderName: null,
+			dueDate: null, deferDate: null, sequential: false, folderName: null, folderPath: null,
 		}];
 
 		vi.mocked(runJXA)
-			.mockResolvedValueOnce(JSON.stringify(tasks))
 			.mockResolvedValueOnce(JSON.stringify(projects))
+			.mockResolvedValueOnce(JSON.stringify(tasks))
 			.mockResolvedValueOnce("[]");
 
 		await engine.sync();

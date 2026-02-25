@@ -1,12 +1,11 @@
 export function buildFetchTasksScript(): string {
 	return `(() => {
-	const doc = document;
-	const allTasks = doc.flattenedTasks;
+	const allTasks = flattenedTasks;
 	const tasks = [];
 	for (let i = 0; i < allTasks.length; i++) {
 		const t = allTasks[i];
 		try {
-			if (t.taskStatus === Task.Status.Dropped) continue;
+			if (t.taskStatus === Task.Status.Dropped || t.completed) continue;
 			tasks.push({
 				id: t.id.primaryKey,
 				name: t.name,
@@ -34,8 +33,16 @@ export function buildFetchTasksScript(): string {
 
 export function buildFetchProjectsScript(): string {
 	return `(() => {
-	const doc = document;
-	const allProjects = doc.flattenedProjects;
+	function getFolderPath(folder) {
+		const parts = [];
+		let f = folder;
+		while (f) {
+			parts.unshift(f.name);
+			f = f.parent;
+		}
+		return parts.join("/");
+	}
+	const allProjects = flattenedProjects;
 	const projects = [];
 	for (let i = 0; i < allProjects.length; i++) {
 		const p = allProjects[i];
@@ -51,7 +58,8 @@ export function buildFetchProjectsScript(): string {
 				dueDate: p.dueDate ? p.dueDate.toISOString() : null,
 				deferDate: p.deferDate ? p.deferDate.toISOString() : null,
 				sequential: p.sequential,
-				folderName: p.parentFolder ? p.parentFolder.name : null
+				folderName: p.parentFolder ? p.parentFolder.name : null,
+				folderPath: p.parentFolder ? getFolderPath(p.parentFolder) : null
 			});
 		} catch (e) {
 			// Skip projects that fail to read
@@ -63,8 +71,7 @@ export function buildFetchProjectsScript(): string {
 
 export function buildFetchTagsScript(): string {
 	return `(() => {
-	const doc = document;
-	const allTags = doc.flattenedTags;
+	const allTags = flattenedTags;
 	const tags = [];
 	for (let i = 0; i < allTags.length; i++) {
 		const t = allTags[i];

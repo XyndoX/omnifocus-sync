@@ -1,27 +1,54 @@
 // src/main.ts
-import { Plugin, Notice } from "obsidian";
+import { Plugin, Notice, Platform } from "obsidian";
 import type { PluginSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
 import { OmniFocusBridgeSettingTab } from "./settings";
 import { SyncEngine } from "./sync/sync-engine";
+import { SyncScheduler } from "./sync/scheduler";
 import { CacheManager } from "./data/cache-manager";
 import { IDMapper } from "./data/id-mapper";
+import { ChangeDetector } from "./sync/change-detector";
+import { registerTaskCommands } from "./commands/task-actions";
+import { registerCodeblockHandler } from "./renderer/codeblock-handler";
+import { generateDashboard } from "./renderer/dashboard";
 
 const PLUGIN_ID = "omnifocus-bridge";
+
+/**
+ * Returns true when running on macOS Desktop where OmniFocus is available.
+ */
+function isMacOS(): boolean {
+	// Obsidian's Platform API is the most reliable check.
+	if (typeof Platform !== "undefined") {
+		return Platform.isMacOS === true;
+	}
+	// Fallback for environments where Platform is unavailable (e.g. tests).
+	if (typeof process !== "undefined") {
+		return process.platform === "darwin";
+	}
+	return false;
+}
 
 export default class OmniFocusBridgePlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private statusBarEl: HTMLElement | null = null;
 	private syncEngine: SyncEngine | null = null;
+	private scheduler: SyncScheduler | null = null;
 	private cache: CacheManager | null = null;
+	private changeDetector: ChangeDetector | null = null;
+	private stopChangeDetector: (() => void) | null = null;
 	private isSyncing = false;
+	private lastFileOpenSync = 0;
 
 	async onload() {
 		await this.loadSettings();
 
-		// Platform check
-		if (typeof process !== "undefined" && process.platform !== "darwin") {
-			new Notice("OmniFocus Bridge requires macOS Desktop.");
+		// Platform check — plugin still loads but does nothing on non-macOS
+		if (!isMacOS()) {
+			new Notice(
+				"OmniFocus Bridge requires macOS Desktop. " +
+				"The plugin is disabled on this platform."
+			);
 			return;
 		}
 
@@ -36,6 +63,25 @@ export default class OmniFocusBridgePlugin extends Plugin {
 			idMapper,
 			this.settings
 		);
+
+		// Initialize change detector
+		this.changeDetector = new ChangeDetector(
+			this.app.vault,
+			this.cache,
+			this.settings
+		);
+		this.stopChangeDetector = this.changeDetector.start();
+
+		// Register task action commands
+		registerTaskCommands(
+			this,
+			this.cache,
+			this.settings,
+			() => this.syncNow()
+		);
+
+		// Register codeblock handler for ```omnifocus blocks
+		registerCodeblockHandler(this, this.cache, this.settings);
 
 		// Settings tab
 		this.addSettingTab(new OmniFocusBridgeSettingTab(this.app, this));
@@ -67,9 +113,70 @@ export default class OmniFocusBridgePlugin extends Plugin {
 				}
 			},
 		});
+
+		this.addCommand({
+			id: "omnifocus-generate-dashboard",
+			name: "OmniFocus: Generate Dashboard",
+			callback: async () => {
+				if (!this.cache) {
+					new Notice("OmniFocus Bridge is not initialized.");
+					return;
+				}
+				try {
+					await generateDashboard(
+						this.app.vault,
+						this.cache,
+						this.settings
+					);
+					new Notice("OmniFocus Dashboard generated.");
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : String(err);
+					new Notice(`Dashboard failed: ${msg}`);
+				}
+			},
+		});
+
+		// Scheduler
+		this.scheduler = new SyncScheduler(
+			() => this.syncNow(),
+			this.settings
+		);
+		this.scheduler.start();
+
+		// Sync on startup (with delay to let Obsidian finish loading)
+		if (this.settings.syncOnStartup) {
+			const startupTimerId = window.setTimeout(() => {
+				this.syncNow();
+			}, 2000);
+			this.register(() => window.clearTimeout(startupTimerId));
+		}
+
+		// Sync on file open (debounced with 30-second cooldown)
+		this.registerEvent(
+			this.app.workspace.on("file-open", (file) => {
+				if (!file) return;
+				if (!file.path.startsWith(this.settings.syncFolderPath + "/")) return;
+				if (!file.path.endsWith(".md")) return;
+
+				const now = Date.now();
+				if (now - this.lastFileOpenSync < 30_000) return;
+
+				this.lastFileOpenSync = now;
+				this.syncNow();
+			})
+		);
 	}
 
 	onunload() {
+		if (this.scheduler) {
+			this.scheduler.stop();
+			this.scheduler = null;
+		}
+		if (this.stopChangeDetector) {
+			this.stopChangeDetector();
+			this.stopChangeDetector = null;
+		}
+		this.changeDetector = null;
 		this.statusBarEl = null;
 		this.syncEngine = null;
 	}
@@ -144,5 +251,8 @@ export default class OmniFocusBridgePlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		if (this.scheduler) {
+			this.scheduler.updateSettings(this.settings);
+		}
 	}
 }

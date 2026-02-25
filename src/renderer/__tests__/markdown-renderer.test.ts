@@ -157,6 +157,7 @@ describe("renderProjectFile", () => {
 			deferDate: null,
 			sequential: false,
 			folderName: null,
+			folderPath: null,
 			tasks: [
 				makeTask({ id: "t1", name: "Design mockups", flagged: true }),
 				makeTask({ id: "t2", name: "Write copy", dueDate: "2025-03-18T00:00:00Z" }),

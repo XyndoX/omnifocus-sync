@@ -30,6 +30,7 @@ export interface OFProject {
 	deferDate: string | null;
 	sequential: boolean;
 	folderName: string | null;
+	folderPath: string | null;
 }
 
 export interface OFTag {
@@ -57,6 +58,8 @@ export interface PluginSettings {
 	showTags: boolean;
 	showEstimate: boolean;
 	showOFLink: boolean;
+	syncInterval: "manual" | "1" | "5" | "15" | "30";
+	syncOnStartup: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -66,6 +69,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	showTags: true,
 	showEstimate: true,
 	showOFLink: false,
+	syncInterval: "manual",
+	syncOnStartup: false,
 };
 
 export interface IDMap {
