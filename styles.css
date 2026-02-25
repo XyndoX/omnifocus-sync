@@ -1,1 +1,107 @@
-/* OmniFocus Bridge styles */
+/* OmniFocus Bridge for Obsidian — plugin styles */
+
+/* ------------------------------------------------------------------ */
+/* Status bar                                                         */
+/* ------------------------------------------------------------------ */
+
+.omnifocus-bridge-status {
+	cursor: pointer;
+	padding: 0 6px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	transition: color 0.15s ease;
+}
+
+.omnifocus-bridge-status:hover {
+	color: var(--text-normal);
+}
+
+/* Error state — applied via setText("OF: error") in main.ts */
+.omnifocus-bridge-status.omnifocus-bridge-error,
+.omnifocus-bridge-status[data-error="true"] {
+	color: var(--text-error);
+}
+
+/* ------------------------------------------------------------------ */
+/* Codeblock: list view                                               */
+/* ------------------------------------------------------------------ */
+
+.omnifocus-codeblock-list {
+	list-style: none;
+	padding-left: 0;
+	margin: 0.5em 0;
+}
+
+.omnifocus-codeblock-list li {
+	display: flex;
+	align-items: baseline;
+	gap: 0.35em;
+	padding: 2px 0;
+	font-size: var(--font-text-size);
+	line-height: 1.5;
+}
+
+.omnifocus-codeblock-list li input[type="checkbox"] {
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.omnifocus-codeblock-empty {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.omnifocus-flag {
+	color: var(--text-error);
+}
+
+.omnifocus-due {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.omnifocus-tags {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.omnifocus-estimate {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+/* ------------------------------------------------------------------ */
+/* Codeblock: table view                                              */
+/* ------------------------------------------------------------------ */
+
+.omnifocus-codeblock-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-text-size);
+	margin: 0.5em 0;
+}
+
+.omnifocus-codeblock-table th {
+	text-align: left;
+	font-weight: var(--font-semibold);
+	padding: 6px 10px;
+	border-bottom: 2px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.omnifocus-codeblock-table td {
+	padding: 5px 10px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	vertical-align: top;
+}
+
+.omnifocus-codeblock-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.omnifocus-codeblock-table tbody tr:hover {
+	background-color: var(--background-modifier-hover);
+}

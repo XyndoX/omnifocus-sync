@@ -22,6 +22,43 @@ function getTempPath(): string {
 	return join(tmpdir(), `omnifocus_${id}.js`);
 }
 
+/**
+ * Translate raw osascript/exec errors into user-friendly messages.
+ */
+function classifyError(error: Error & { killed?: boolean; code?: string | number; stderr?: string }): Error {
+	const msg = (error.message || "") + (error.stderr || "");
+	const lower = msg.toLowerCase();
+
+	// OmniFocus not running
+	if (lower.includes("not running") || lower.includes("is not open") || lower.includes("application can\u2019t be found")) {
+		return new Error(
+			"OmniFocus is not running. Please open it and try again."
+		);
+	}
+
+	// Timeout (killed by Node or explicit timeout code)
+	if (error.killed || lower.includes("timed out") || lower.includes("etimedout")) {
+		return new Error(
+			"Sync timed out. OmniFocus may be busy. Try again."
+		);
+	}
+
+	// Automation permission denied
+	if (lower.includes("not allowed assistive access") ||
+		lower.includes("not allowed to send keystrokes") ||
+		lower.includes("is not allowed to") ||
+		lower.includes("permission") ||
+		lower.includes("assistive") ||
+		lower.includes("osascript is not allowed")) {
+		return new Error(
+			"Automation permission denied. Grant access in System Settings > Privacy & Security > Automation."
+		);
+	}
+
+	// Return original error for unrecognised patterns
+	return error;
+}
+
 export function runJXA(omniScript: string): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const tmpFile = getTempPath();
@@ -38,7 +75,7 @@ export function runJXA(omniScript: string): Promise<string> {
 			"osascript",
 			["-l", "JavaScript", tmpFile],
 			{ timeout: TIMEOUT_MS, maxBuffer: MAX_BUFFER },
-			(error, stdout, _stderr) => {
+			(error, stdout, stderr) => {
 				try {
 					unlinkSync(tmpFile);
 				} catch {
@@ -46,7 +83,12 @@ export function runJXA(omniScript: string): Promise<string> {
 				}
 
 				if (error) {
-					reject(error);
+					// Attach stderr to the error for classification
+					const enriched = error as Error & { stderr?: string };
+					if (stderr) {
+						enriched.stderr = stderr;
+					}
+					reject(classifyError(enriched));
 					return;
 				}
 
