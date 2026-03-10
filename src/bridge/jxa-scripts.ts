@@ -1,17 +1,20 @@
 export function buildFetchTasksScript(): string {
 	return `(() => {
-	const allTasks = flattenedTasks;
-	const tasks = [];
-	for (let i = 0; i < allTasks.length; i++) {
-		const t = allTasks[i];
+	var seen = {};
+	var tasks = [];
+	function addTask(t) {
 		try {
-			if (t.taskStatus === Task.Status.Dropped || t.completed) continue;
+			var key = t.id.primaryKey;
+			if (seen[key]) return;
+			if (t.taskStatus === Task.Status.Dropped) return;
+			if (t.completed) return;
+			seen[key] = true;
 			tasks.push({
-				id: t.id.primaryKey,
+				id: key,
 				name: t.name,
 				note: t.note || null,
-				completed: t.completed,
-				completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+				completed: false,
+				completionDate: null,
 				dueDate: t.dueDate ? t.dueDate.toISOString() : null,
 				deferDate: t.deferDate ? t.deferDate.toISOString() : null,
 				flagged: t.flagged,
@@ -23,11 +26,89 @@ export function buildFetchTasksScript(): string {
 				added: t.added ? t.added.toISOString() : null,
 				modified: t.modificationDate ? t.modificationDate.toISOString() : null
 			});
-		} catch (e) {
-			// Skip tasks that fail to read
-		}
+		} catch (e) {}
 	}
+	var allTasks = flattenedTasks;
+	for (var i = 0; i < allTasks.length; i++) { addTask(allTasks[i]); }
+	try {
+		var inboxItems = inbox;
+		for (var j = 0; j < inboxItems.length; j++) { addTask(inboxItems[j]); }
+	} catch (e) {}
 	return JSON.stringify(tasks);
+})()`;
+}
+
+/**
+ * Build a JXA script that checks the status of specific task IDs.
+ * Used to detect whether "missing" tasks were completed or deleted.
+ */
+export function buildCheckTaskStatusScript(taskIds: string[]): string {
+	const idsJson = JSON.stringify(taskIds);
+	return `(() => {
+	var ids = ${idsJson};
+	var lookup = {};
+	for (var i = 0; i < ids.length; i++) { lookup[ids[i]] = true; }
+	var remaining = ids.length;
+	var found = {};
+	var allTasks = flattenedTasks;
+	for (var i = 0; i < allTasks.length; i++) {
+		if (remaining === 0) break;
+		var t = allTasks[i];
+		try {
+			var key = t.id.primaryKey;
+			if (lookup[key]) {
+				found[key] = {
+					completed: t.completed,
+					completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+					name: t.name,
+					flagged: t.flagged,
+					dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+					deferDate: t.deferDate ? t.deferDate.toISOString() : null,
+					note: t.note || null,
+					estimatedMinutes: t.estimatedMinutes || null,
+					taskStatus: String(t.taskStatus),
+					projectId: t.containingProject ? t.containingProject.id.primaryKey : null,
+					projectName: t.containingProject ? t.containingProject.name : null,
+					tags: t.tags.map(tag => ({ id: tag.id.primaryKey, name: tag.name })),
+					added: t.added ? t.added.toISOString() : null,
+					modified: t.modificationDate ? t.modificationDate.toISOString() : null
+				};
+				delete lookup[key];
+				remaining--;
+			}
+		} catch (e) {}
+	}
+	try {
+		var inboxItems = inbox;
+		for (var j = 0; j < inboxItems.length; j++) {
+			if (remaining === 0) break;
+			var t = inboxItems[j];
+			try {
+				var key = t.id.primaryKey;
+				if (lookup[key]) {
+					found[key] = {
+						completed: t.completed,
+						completionDate: t.completionDate ? t.completionDate.toISOString() : null,
+						name: t.name,
+						flagged: t.flagged,
+						dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+						deferDate: t.deferDate ? t.deferDate.toISOString() : null,
+						note: t.note || null,
+						estimatedMinutes: t.estimatedMinutes || null,
+						taskStatus: String(t.taskStatus),
+						projectId: t.containingProject ? t.containingProject.id.primaryKey : null,
+						projectName: t.containingProject ? t.containingProject.name : null,
+						tags: t.tags.map(tag => ({ id: tag.id.primaryKey, name: tag.name })),
+						added: t.added ? t.added.toISOString() : null,
+						modified: t.modificationDate ? t.modificationDate.toISOString() : null
+					};
+					delete lookup[key];
+					remaining--;
+				}
+			} catch (e) {}
+		}
+	} catch (e) {}
+	return JSON.stringify(found);
 })()`;
 }
 

@@ -6,16 +6,19 @@ import type {
 	SyncResult,
 	ProjectWithTasks,
 	PluginSettings,
+	CacheData,
 } from "../types";
 import { runJXA } from "../bridge/jxa-runner";
 import {
 	buildFetchTasksScript,
 	buildFetchProjectsScript,
 	buildFetchTagsScript,
+	buildCheckTaskStatusScript,
 } from "../bridge/jxa-scripts";
 import { renderProjectFile, renderInboxFile } from "../renderer/markdown-renderer";
 import type { CacheManager } from "../data/cache-manager";
 import type { IDMapper } from "../data/id-mapper";
+import type { ChangeDetector } from "./change-detector";
 import { computeDiff } from "./differ";
 
 function sanitizeFilename(name: string): string {
@@ -23,6 +26,8 @@ function sanitizeFilename(name: string): string {
 }
 
 export class SyncEngine {
+	private changeDetector: ChangeDetector | null = null;
+
 	constructor(
 		private vault: Vault,
 		private cache: CacheManager,
@@ -30,7 +35,24 @@ export class SyncEngine {
 		private settings: PluginSettings
 	) {}
 
+	/** Link the change detector so sync can suppress it during file writes. */
+	setChangeDetector(detector: ChangeDetector): void {
+		this.changeDetector = detector;
+	}
+
 	async sync(): Promise<SyncResult> {
+		// Wait if change detector is actively writing to OmniFocus
+		if (this.changeDetector?.isProcessing) {
+			await new Promise<void>((resolve) => {
+				const check = setInterval(() => {
+					if (!this.changeDetector?.isProcessing) {
+						clearInterval(check);
+						resolve();
+					}
+				}, 100);
+			});
+		}
+
 		// 1. Fetch data from OmniFocus (sequential to avoid overwhelming OmniFocus)
 		const projectsJson = await runJXA(buildFetchProjectsScript());
 		const tasksJson = await runJXA(buildFetchTasksScript());
@@ -56,6 +78,66 @@ export class SyncEngine {
 			tags = JSON.parse(tagsJson);
 		} catch {
 			throw new Error("Failed to parse OmniFocus tag data. The response was invalid.");
+		}
+
+		// 1b. Check for tasks that were in cache but missing from active fetch
+		// (they may have been completed in OmniFocus)
+		const cachedDataForLookup = await this.cache.load();
+		if (cachedDataForLookup) {
+			const freshIds = new Set(tasks.map((t) => t.id));
+			const missingIds: string[] = [];
+
+			for (const p of cachedDataForLookup.projects) {
+				for (const t of p.tasks) {
+					if (!freshIds.has(t.id)) {
+						missingIds.push(t.id);
+					}
+				}
+			}
+			for (const t of cachedDataForLookup.inboxTasks) {
+				if (!freshIds.has(t.id)) {
+					missingIds.push(t.id);
+				}
+			}
+
+			if (missingIds.length > 0) {
+				try {
+					const statusJson = await runJXA(
+						buildCheckTaskStatusScript(missingIds)
+					);
+					const statuses: Record<
+						string,
+						Omit<OFTask, "id"> & { completed: boolean }
+					> = JSON.parse(statusJson);
+
+					for (const id of missingIds) {
+						const status = statuses[id];
+						if (status && status.completed) {
+							// Task was completed in OmniFocus — add it back with full data
+							tasks.push({
+								id,
+								name: status.name ?? "",
+								note: status.note ?? null,
+								completed: true,
+								completionDate: status.completionDate ?? null,
+								dueDate: status.dueDate ?? null,
+								deferDate: status.deferDate ?? null,
+								flagged: status.flagged ?? false,
+								estimatedMinutes: status.estimatedMinutes ?? null,
+								taskStatus: status.taskStatus ?? "Completed",
+								projectId: status.projectId ?? null,
+								projectName: status.projectName ?? null,
+								tags: status.tags ?? [],
+								added: status.added ?? null,
+								modified: status.modified ?? null,
+							});
+						}
+						// Tasks not found in OmniFocus (deleted) are left out
+					}
+				} catch (err) {
+					console.error("OmniFocus: failed to check missing tasks", err);
+				}
+			}
 		}
 
 		// 2. Group tasks by project
@@ -93,6 +175,10 @@ export class SyncEngine {
 		// 5. Ensure sync folder exists
 		await this.ensureFolder(this.settings.syncFolderPath);
 
+		// Suppress change detector while writing files to avoid feedback loop
+		this.changeDetector?.suppress();
+
+		try {
 		if (!diff.hasChanges && cachedData) {
 			// No changes detected — skip file writes, just update timestamps
 			console.log("Incremental sync: no changes detected, skipping file writes");
@@ -107,9 +193,9 @@ export class SyncEngine {
 		}
 
 		// 6. Determine which projects need file updates
-		const changedProjectIds = this.getChangedProjectIds(diff, tasks);
+		const changedProjectIds = this.getChangedProjectIds(diff, tasks, cachedData);
 		const isFullSync = !cachedData;
-		const inboxChanged = this.isInboxChanged(diff, inboxTasks);
+		const inboxChanged = this.isInboxChanged(diff, inboxTasks, cachedData);
 
 		// 7. Write markdown files
 		const idMap = await this.idMapper.load();
@@ -181,6 +267,11 @@ export class SyncEngine {
 		});
 		await this.idMapper.save(idMap);
 
+		} finally {
+			// Resume change detector after all file writes are done
+			this.changeDetector?.resume();
+		}
+
 		return result;
 	}
 
@@ -189,7 +280,8 @@ export class SyncEngine {
 	 */
 	private getChangedProjectIds(
 		diff: ReturnType<typeof computeDiff>,
-		tasks: OFTask[]
+		tasks: OFTask[],
+		cachedData: CacheData | null
 	): Set<string> {
 		const ids = new Set<string>();
 
@@ -198,8 +290,15 @@ export class SyncEngine {
 			ids.add(change.projectId);
 		}
 
-		// Build a task->project lookup from fresh tasks
+		// Build a task->project lookup from fresh tasks AND cached tasks
 		const taskToProject = new Map<string, string>();
+		if (cachedData) {
+			for (const p of cachedData.projects) {
+				for (const t of p.tasks) {
+					taskToProject.set(t.id, p.id);
+				}
+			}
+		}
 		for (const t of tasks) {
 			if (t.projectId) {
 				taskToProject.set(t.id, t.projectId);
@@ -219,13 +318,20 @@ export class SyncEngine {
 
 	/**
 	 * Check if any inbox tasks (tasks without projectId) have changed.
+	 * Checks both fresh and cached inbox to detect removals/completions.
 	 */
 	private isInboxChanged(
 		diff: ReturnType<typeof computeDiff>,
-		inboxTasks: OFTask[]
+		inboxTasks: OFTask[],
+		cachedData: CacheData | null
 	): boolean {
-		const inboxTaskIds = new Set(inboxTasks.map((t) => t.id));
-		return diff.taskChanges.some((c) => inboxTaskIds.has(c.taskId));
+		const freshInboxIds = new Set(inboxTasks.map((t) => t.id));
+		const cachedInboxIds = new Set(
+			cachedData?.inboxTasks.map((t) => t.id) ?? []
+		);
+		return diff.taskChanges.some(
+			(c) => freshInboxIds.has(c.taskId) || cachedInboxIds.has(c.taskId)
+		);
 	}
 
 	/**

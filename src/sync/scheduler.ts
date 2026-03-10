@@ -10,11 +10,14 @@ const INTERVAL_MS: Record<string, number> = {
 
 export class SyncScheduler {
 	private timerId: number | null = null;
+	private activeInterval: string;
 
 	constructor(
 		private syncFn: () => Promise<void>,
 		private settings: PluginSettings
-	) {}
+	) {
+		this.activeInterval = settings.syncInterval;
+	}
 
 	/**
 	 * Start the scheduler based on settings.syncInterval.
@@ -24,6 +27,8 @@ export class SyncScheduler {
 		this.stop();
 
 		const interval = this.settings.syncInterval;
+		this.activeInterval = interval;
+
 		if (interval === "manual") {
 			return;
 		}
@@ -52,10 +57,9 @@ export class SyncScheduler {
 	 * Update settings and restart the timer if the interval changed.
 	 */
 	updateSettings(settings: PluginSettings): void {
-		const oldInterval = this.settings.syncInterval;
 		this.settings = settings;
 
-		if (oldInterval !== settings.syncInterval) {
+		if (this.activeInterval !== settings.syncInterval) {
 			this.start();
 		}
 	}

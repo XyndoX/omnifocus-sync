@@ -30,6 +30,23 @@ export class ChangeDetector {
 	private debounceTimers: Map<string, ReturnType<typeof setTimeout>> =
 		new Map();
 	private readonly DEBOUNCE_MS = 500;
+	private _suppressed = false;
+	private _isProcessing = false;
+
+	/** Suppress change detection (e.g. while sync engine is writing files). */
+	suppress(): void {
+		this._suppressed = true;
+	}
+
+	/** Resume change detection. */
+	resume(): void {
+		this._suppressed = false;
+	}
+
+	/** True while actively writing back to OmniFocus. */
+	get isProcessing(): boolean {
+		return this._isProcessing;
+	}
 
 	constructor(
 		private vault: Vault,
@@ -66,6 +83,9 @@ export class ChangeDetector {
 	// -----------------------------------------------------------------------
 
 	private onFileModified(file: TAbstractFile): void {
+		// Skip if suppressed (sync engine is writing)
+		if (this._suppressed) return;
+
 		// Only process .md files inside the sync folder
 		if (!file.path.endsWith(".md")) return;
 		if (!file.path.startsWith(this.settings.syncFolderPath + "/") &&
@@ -91,6 +111,15 @@ export class ChangeDetector {
 
 	/** Read file, extract tasks, compare against cache, and write back changes. */
 	async processFile(file: TFile): Promise<void> {
+		this._isProcessing = true;
+		try {
+			await this._processFileInner(file);
+		} finally {
+			this._isProcessing = false;
+		}
+	}
+
+	private async _processFileInner(file: TFile): Promise<void> {
 		const content = await this.vault.read(file);
 		const fileTasks = this.parseTaskLines(content);
 
