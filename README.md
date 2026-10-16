@@ -161,6 +161,13 @@ The plugin communicates with OmniFocus through its JavaScript for Automation (JX
 
 Each task line includes an invisible HTML comment anchor (`<!-- of:taskId -->`) that links the markdown checkbox to its OmniFocus counterpart.
 
+### Permissions and privacy
+
+- **Runs `osascript`** (Node.js `child_process`) to talk to OmniFocus on your Mac. That is the only external program it runs.
+- **Writes one temporary file per call** (Node.js `fs`): the JXA script goes into your system temp folder, is passed to `osascript`, and is deleted right after. No other files outside your vault are read or written.
+- **Inside your vault** it only creates and updates notes in the sync folder (default `OmniFocus/`) and its own plugin data.
+- **No network access**, no telemetry, no accounts. Everything stays between OmniFocus and Obsidian on your machine.
+
 ## FAQ
 
 **Q: Does this work on Windows, Linux, or mobile?**

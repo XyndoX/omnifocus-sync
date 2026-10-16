@@ -127,15 +127,19 @@ export default class OmniFocusBridgePlugin extends Plugin {
 				const dashboard = this.app.vault.getAbstractFileByPath(
 					`${this.settings.syncFolderPath}/Dashboard.md`
 				);
+				if (!(folder instanceof TFolder)) {
+					new Notice(`Sync folder "${this.settings.syncFolderPath}" not found. Run Sync first.`);
+					return;
+				}
 				const note =
 					(dashboard instanceof TFile ? dashboard : null) ??
-					this.app.vault
-						.getMarkdownFiles()
-						.find((f) => f.path.startsWith(`${this.settings.syncFolderPath}/`));
-				if (folder instanceof TFolder && note) {
+					folder.children.find(
+						(f): f is TFile => f instanceof TFile && f.extension === "md"
+					);
+				if (note) {
 					void this.app.workspace.getLeaf(false).openFile(note);
 				} else {
-					new Notice(`Sync folder "${this.settings.syncFolderPath}" not found. Run Sync first.`);
+					new Notice(`Sync folder "${this.settings.syncFolderPath}" has no notes yet. Run Sync first.`);
 				}
 			},
 		});
