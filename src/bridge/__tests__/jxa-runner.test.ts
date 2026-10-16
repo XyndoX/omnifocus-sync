@@ -1,110 +1,73 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runJXA, isOmniFocusAvailable } from "../jxa-runner";
 import * as child_process from "child_process";
-import * as fs from "fs";
-import * as os from "os";
 
 vi.mock("child_process");
-vi.mock("fs");
-vi.mock("os");
+
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void;
+
+/** Mock execFile: answer via callback, capture what is written to stdin. */
+function mockOsascript(error: Error | null, stdout: string, stderr = "") {
+	const stdin = { on: vi.fn(), end: vi.fn() };
+	vi.mocked(child_process.execFile).mockImplementation(
+		(_cmd: any, _args: any, _opts: any, callback?: ExecCallback) => {
+			if (callback) queueMicrotask(() => callback(error, stdout, stderr));
+			return { stdin } as any;
+		}
+	);
+	return stdin;
+}
 
 describe("runJXA", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		vi.mocked(os.tmpdir).mockReturnValue("/tmp");
 	});
 
-	it("writes script to temp file and executes osascript", async () => {
+	it("pipes the script to osascript over stdin, without a script file", async () => {
 		const mockResult = JSON.stringify({ test: true });
-		vi.mocked(child_process.execFile).mockImplementation(
-			(_cmd, _args, _opts, callback) => {
-				if (callback) callback(null, mockResult, "");
-				return {} as any;
-			}
-		);
-		vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-		vi.mocked(fs.unlinkSync).mockImplementation(() => {});
+		const stdin = mockOsascript(null, mockResult);
 
-		const result = await runJXA('return JSON.stringify({test: true})');
-
-		expect(fs.writeFileSync).toHaveBeenCalledOnce();
-		const writtenPath = vi.mocked(fs.writeFileSync).mock.calls[0]![0] as string;
-		expect(writtenPath).toMatch(/^\/tmp\/omnifocus_.*\.js$/);
+		const result = await runJXA("return JSON.stringify({test: true})");
 
 		expect(child_process.execFile).toHaveBeenCalledWith(
 			"osascript",
-			["-l", "JavaScript", writtenPath],
+			["-l", "JavaScript"],
 			expect.objectContaining({ timeout: 90000 }),
 			expect.any(Function)
 		);
-
+		expect(stdin.end).toHaveBeenCalledOnce();
+		expect(stdin.on).toHaveBeenCalledWith("error", expect.any(Function));
 		expect(result).toBe(mockResult);
 	});
 
-	it("cleans up temp file even on error", async () => {
-		vi.mocked(child_process.execFile).mockImplementation(
-			(_cmd, _args, _opts, callback) => {
-				if (callback) callback(new Error("script failed"), "", "error output");
-				return {} as any;
-			}
-		);
-		vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-		vi.mocked(fs.unlinkSync).mockImplementation(() => {});
-
+	it("rejects with the osascript error", async () => {
+		mockOsascript(new Error("script failed"), "", "error output");
 		await expect(runJXA("bad script")).rejects.toThrow("script failed");
-		expect(fs.unlinkSync).toHaveBeenCalledOnce();
 	});
 
 	it("wraps omniScript in evaluateJavascript shell", async () => {
-		const innerScript = 'return JSON.stringify({ok: true})';
-		vi.mocked(child_process.execFile).mockImplementation(
-			(_cmd, _args, _opts, callback) => {
-				if (callback) callback(null, '{"ok":true}', "");
-				return {} as any;
-			}
-		);
-		vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-		vi.mocked(fs.unlinkSync).mockImplementation(() => {});
+		const stdin = mockOsascript(null, '{"ok":true}');
 
-		await runJXA(innerScript);
+		await runJXA("return JSON.stringify({ok: true})");
 
-		const writtenContent = vi.mocked(fs.writeFileSync).mock.calls[0]![1] as string;
-		expect(writtenContent).toContain("evaluateJavascript");
-		expect(writtenContent).toContain("Application('OmniFocus')");
+		const written = stdin.end.mock.calls[0]![0] as string;
+		expect(written).toContain("evaluateJavascript");
+		expect(written).toContain("Application('OmniFocus')");
 	});
 });
 
 describe("isOmniFocusAvailable", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		vi.mocked(os.tmpdir).mockReturnValue("/tmp");
 	});
 
 	it("returns true when OmniFocus responds", async () => {
-		vi.mocked(child_process.execFile).mockImplementation(
-			(_cmd, _args, _opts, callback) => {
-				if (callback) callback(null, '{"version":"4.5"}', "");
-				return {} as any;
-			}
-		);
-		vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-		vi.mocked(fs.unlinkSync).mockImplementation(() => {});
-
-		const result = await isOmniFocusAvailable();
-		expect(result).toBe(true);
+		mockOsascript(null, '{"version":"4.5"}');
+		expect(await isOmniFocusAvailable()).toBe(true);
 	});
 
 	it("returns false when osascript fails", async () => {
-		vi.mocked(child_process.execFile).mockImplementation(
-			(_cmd, _args, _opts, callback) => {
-				if (callback) callback(new Error("not running"), "", "");
-				return {} as any;
-			}
-		);
-		vi.mocked(fs.writeFileSync).mockImplementation(() => {});
-		vi.mocked(fs.unlinkSync).mockImplementation(() => {});
-
-		const result = await isOmniFocusAvailable();
-		expect(result).toBe(false);
+		mockOsascript(new Error("not running"), "");
+		expect(await isOmniFocusAvailable()).toBe(false);
 	});
 });

@@ -163,8 +163,7 @@ Each task line includes an invisible HTML comment anchor (`<!-- of:taskId -->`) 
 
 ### Permissions and privacy
 
-- **Runs `osascript`** (Node.js `child_process`) to talk to OmniFocus on your Mac. That is the only external program it runs.
-- **Writes one temporary file per call** (Node.js `fs`): the JXA script goes into your system temp folder, is passed to `osascript`, and is deleted right after. No other files outside your vault are read or written.
+- **Runs `osascript`** (Node.js `child_process`) to talk to OmniFocus on your Mac. That is the only external program it runs. The script is passed over stdin, so nothing is written to disk outside your vault.
 - **Inside your vault** it only creates and updates notes in the sync folder (default `OmniFocus/`) and its own plugin data.
 - **No network access**, no telemetry, no accounts. Everything stays between OmniFocus and Obsidian on your machine.
 

@@ -1,7 +1,4 @@
 import { execFile } from "child_process";
-import { writeFileSync, unlinkSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
 
 const TIMEOUT_MS = 90_000;
 const MAX_BUFFER = 10 * 1024 * 1024; // 10MB
@@ -15,11 +12,6 @@ function buildJXAWrapper(omniScript: string): string {
 	const result = app.evaluateJavascript(\`${escaped}\`);
 	return result;
 })()`;
-}
-
-function getTempPath(): string {
-	const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-	return join(tmpdir(), `omnifocus_${id}.js`);
 }
 
 /**
@@ -61,27 +53,15 @@ function classifyError(error: Error & { killed?: boolean; code?: string | number
 
 export function runJXA(omniScript: string): Promise<string> {
 	return new Promise((resolve, reject) => {
-		const tmpFile = getTempPath();
 		const jxa = buildJXAWrapper(omniScript);
 
-		try {
-			writeFileSync(tmpFile, jxa, "utf-8");
-		} catch (err) {
-			reject(new Error(`Failed to write temp file: ${err}`));
-			return;
-		}
-
-		execFile(
+		// No script file argument: osascript reads the script from stdin,
+		// so nothing is written to disk.
+		const child = execFile(
 			"osascript",
-			["-l", "JavaScript", tmpFile],
+			["-l", "JavaScript"],
 			{ timeout: TIMEOUT_MS, maxBuffer: MAX_BUFFER },
 			(error, stdout, stderr) => {
-				try {
-					unlinkSync(tmpFile);
-				} catch {
-					// ignore cleanup errors
-				}
-
 				if (error) {
 					// Attach stderr to the error for classification
 					const enriched = error as Error & { stderr?: string };
@@ -95,6 +75,11 @@ export function runJXA(omniScript: string): Promise<string> {
 				resolve(stdout.trim());
 			}
 		);
+
+		// If osascript exits early, the write fails with EPIPE; the exec
+		// callback above already reports the real error.
+		child.stdin?.on("error", () => {});
+		child.stdin?.end(jxa, "utf-8");
 	});
 }
 
