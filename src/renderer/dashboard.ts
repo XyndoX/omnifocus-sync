@@ -1,5 +1,5 @@
 // src/renderer/dashboard.ts
-import type { Vault } from "obsidian";
+import { TFile, type Vault } from "obsidian";
 import type { OFTask, PluginSettings, CacheData } from "../types";
 import type { CacheManager } from "../data/cache-manager";
 import { renderTaskLine, sortTasks } from "./markdown-renderer";
@@ -168,18 +168,14 @@ export async function generateDashboard(
 	const dashboardPath = `${settings.syncFolderPath}/Dashboard.md`;
 
 	// Ensure the sync folder exists
-	const folderExists = await vault.adapter.exists(settings.syncFolderPath);
-	if (!folderExists) {
+	if (!vault.getAbstractFileByPath(settings.syncFolderPath)) {
 		await vault.createFolder(settings.syncFolderPath);
 	}
 
 	// Write or overwrite dashboard file
-	const fileExists = await vault.adapter.exists(dashboardPath);
-	if (fileExists) {
-		const file = vault.getAbstractFileByPath(dashboardPath);
-		if (file) {
-			await vault.modify(file as import("obsidian").TFile, markdown);
-		}
+	const file = vault.getAbstractFileByPath(dashboardPath);
+	if (file instanceof TFile) {
+		await vault.modify(file, markdown);
 	} else {
 		await vault.create(dashboardPath, markdown);
 	}

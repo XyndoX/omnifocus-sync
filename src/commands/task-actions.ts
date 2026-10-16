@@ -77,8 +77,8 @@ export function registerTaskCommands(
 	// Quick Add Task
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-quick-add",
-		name: "OmniFocus: Quick Add Task",
+		id: "quick-add",
+		name: "Quick add task",
 		callback: () => {
 			// Try to read default project from current file frontmatter
 			let defaultProjectId: string | undefined;
@@ -106,8 +106,8 @@ export function registerTaskCommands(
 	// Complete / Reopen Task
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-toggle-complete",
-		name: "OmniFocus: Complete/Reopen Task",
+		id: "toggle-complete",
+		name: "Complete/reopen task",
 		editorCallback: (editor) => {
 			const cursor = editor.getCursor();
 			const line = editor.getLine(cursor.line);
@@ -140,8 +140,8 @@ export function registerTaskCommands(
 	// Toggle Flag
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-toggle-flag",
-		name: "OmniFocus: Toggle Flag",
+		id: "toggle-flag",
+		name: "Toggle flag",
 		editorCallback: (editor) => {
 			const cursor = editor.getCursor();
 			const line = editor.getLine(cursor.line);
@@ -195,8 +195,8 @@ export function registerTaskCommands(
 	// Set Due Date
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-set-due-date",
-		name: "OmniFocus: Set Due Date",
+		id: "set-due-date",
+		name: "Set due date",
 		editorCallback: (editor) => {
 			const cursor = editor.getCursor();
 			const line = editor.getLine(cursor.line);
@@ -255,8 +255,8 @@ export function registerTaskCommands(
 	// Set Defer Date
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-set-defer-date",
-		name: "OmniFocus: Set Defer Date",
+		id: "set-defer-date",
+		name: "Set defer date",
 		editorCallback: (editor) => {
 			const cursor = editor.getCursor();
 			const line = editor.getLine(cursor.line);
@@ -316,8 +316,8 @@ export function registerTaskCommands(
 	// Open in OmniFocus
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-open-task",
-		name: "OmniFocus: Open in OmniFocus",
+		id: "open-task",
+		name: "Open task in OmniFocus",
 		editorCallback: (editor) => {
 			const cursor = editor.getCursor();
 			const line = editor.getLine(cursor.line);
@@ -335,8 +335,8 @@ export function registerTaskCommands(
 	// Insert Daily Summary
 	// -----------------------------------------------------------------
 	plugin.addCommand({
-		id: "omnifocus-insert-daily-summary",
-		name: "OmniFocus: Insert Daily Summary",
+		id: "insert-daily-summary",
+		name: "Insert daily summary",
 		editorCallback: (editor) => {
 			const today = new Date().toISOString().slice(0, 10);
 

@@ -1,9 +1,9 @@
 {
 	"id": "omnifocus-bridge",
 	"name": "OmniFocus Bridge",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
-	"description": "Bidirectional sync between OmniFocus 4 Pro and Obsidian.",
+	"description": "Sync OmniFocus 4 Pro projects and tasks into your vault and write changes back.",
 	"author": "Christian Reinhardt",
 	"authorUrl": "https://github.com/XyndoX",
 	"isDesktopOnly": true

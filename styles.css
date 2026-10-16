@@ -551,3 +551,9 @@
 	opacity: 0.5;
 	cursor: default;
 }
+
+/* Off-screen native date picker used by the side panel */
+.omnifocus-bridge-hidden-picker {
+	position: fixed;
+	opacity: 0;
+}

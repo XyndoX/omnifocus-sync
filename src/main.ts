@@ -1,5 +1,5 @@
 // src/main.ts
-import { Plugin, Notice, Platform } from "obsidian";
+import { Plugin, Notice, Platform, TFile, TFolder } from "obsidian";
 import type { PluginSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
 import { OmniFocusBridgeSettingTab } from "./settings";
@@ -110,20 +110,30 @@ export default class OmniFocusBridgePlugin extends Plugin {
 
 		// Commands
 		this.addCommand({
-			id: "omnifocus-sync-now",
-			name: "Sync Now",
+			id: "sync-now",
+			name: "Sync now",
 			callback: () => this.syncNow(),
 		});
 
 		this.addCommand({
-			id: "omnifocus-open-folder",
-			name: "Open Sync Folder",
+			id: "open-sync-folder",
+			name: "Open sync folder",
 			callback: () => {
+				// No public API reveals a folder in the file explorer, so open a
+				// note inside it: the dashboard if present, else the first note.
 				const folder = this.app.vault.getAbstractFileByPath(
 					this.settings.syncFolderPath
 				);
-				if (folder) {
-					(this.app as any).internalPlugins?.plugins?.["file-explorer"]?.instance?.revealInFolder(folder);
+				const dashboard = this.app.vault.getAbstractFileByPath(
+					`${this.settings.syncFolderPath}/Dashboard.md`
+				);
+				const note =
+					(dashboard instanceof TFile ? dashboard : null) ??
+					this.app.vault
+						.getMarkdownFiles()
+						.find((f) => f.path.startsWith(`${this.settings.syncFolderPath}/`));
+				if (folder instanceof TFolder && note) {
+					void this.app.workspace.getLeaf(false).openFile(note);
 				} else {
 					new Notice(`Sync folder "${this.settings.syncFolderPath}" not found. Run Sync first.`);
 				}
@@ -131,14 +141,14 @@ export default class OmniFocusBridgePlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "omnifocus-open-panel",
-			name: "Open OmniFocus Panel",
+			id: "open-panel",
+			name: "Open panel",
 			callback: () => this.activatePanel(),
 		});
 
 		this.addCommand({
-			id: "omnifocus-generate-dashboard",
-			name: "OmniFocus: Generate Dashboard",
+			id: "generate-dashboard",
+			name: "Generate dashboard",
 			callback: async () => {
 				if (!this.cache) {
 					new Notice("OmniFocus Bridge is not initialized.");

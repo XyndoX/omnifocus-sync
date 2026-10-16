@@ -68,7 +68,7 @@ Then copy `main.js`, `manifest.json`, and `styles.css` from the repo root into `
 
 1. Open **Settings > OmniFocus Bridge**
 2. Click **Test Connection** to verify OmniFocus is running and accessible
-3. Click **Sync Now** or use `Cmd+P` and search for **OmniFocus: Sync Now**
+3. Click **Sync now** or use `Cmd+P` and search for **OmniFocus Bridge: Sync now**
 
 Your OmniFocus projects will appear as markdown files inside the sync folder (default: `OmniFocus/`).
 
@@ -78,17 +78,17 @@ Open the command palette (`Cmd+P`) and search for any of the following:
 
 | Command | Description |
 |---------|-------------|
-| **Sync Now** | Pull latest data from OmniFocus and update markdown files |
-| **Open Sync Folder** | Reveal the OmniFocus sync folder in the file explorer |
-| **Open OmniFocus Panel** | Open the OmniFocus side panel (Today, Inbox, Projects, Dashboard) |
-| **OmniFocus: Generate Dashboard** | Create or update `Dashboard.md` with overdue, due today, due this week, and flagged task sections |
-| **OmniFocus: Quick Add Task** | Open a modal to create a new task in OmniFocus (auto-detects project from current file) |
-| **OmniFocus: Complete/Reopen Task** | Toggle the completion state of the task on the current line |
-| **OmniFocus: Toggle Flag** | Flag or unflag the task on the current line |
-| **OmniFocus: Set Due Date** | Set or clear the due date for the task on the current line |
-| **OmniFocus: Set Defer Date** | Set or clear the defer date for the task on the current line |
-| **OmniFocus: Open in OmniFocus** | Open the task on the current line directly in OmniFocus |
-| **OmniFocus: Insert Daily Summary** | Insert a summary of today's due, overdue, and flagged tasks at the cursor |
+| **Sync now** | Pull latest data from OmniFocus and update markdown files |
+| **Open sync folder** | Open the dashboard (or the first note) in the sync folder |
+| **Open panel** | Open the OmniFocus side panel (Today, Inbox, Projects, Dashboard) |
+| **Generate dashboard** | Create or update `Dashboard.md` with overdue, due today, due this week, and flagged task sections |
+| **Quick add task** | Open a modal to create a new task in OmniFocus (auto-detects project from current file) |
+| **Complete/reopen task** | Toggle the completion state of the task on the current line |
+| **Toggle flag** | Flag or unflag the task on the current line |
+| **Set due date** | Set or clear the due date for the task on the current line |
+| **Set defer date** | Set or clear the defer date for the task on the current line |
+| **Open task in OmniFocus** | Open the task on the current line directly in OmniFocus |
+| **Insert daily summary** | Insert a summary of today's due, overdue, and flagged tasks at the cursor |
 
 ### Codeblock Views
 

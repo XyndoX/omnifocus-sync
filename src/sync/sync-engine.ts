@@ -181,7 +181,6 @@ export class SyncEngine {
 		try {
 		if (!diff.hasChanges && cachedData) {
 			// No changes detected — skip file writes, just update timestamps
-			console.log("Incremental sync: no changes detected, skipping file writes");
 			await this.cache.save({
 				syncedAt,
 				projects: projectsWithTasks,
@@ -249,14 +248,6 @@ export class SyncEngine {
 			}
 		}
 
-		// Log incremental sync summary
-		if (!isFullSync) {
-			const taskChangeCount = diff.taskChanges.length;
-			const projectChangeCount = changedProjectIds.size;
-			console.log(
-				`Incremental sync: ${taskChangeCount} tasks changed, ${projectChangeCount} projects updated`
-			);
-		}
 
 		// 8. Save cache and ID map
 		await this.cache.save({
@@ -346,8 +337,7 @@ export class SyncEngine {
 	}
 
 	private async ensureFolder(path: string): Promise<void> {
-		const exists = await this.vault.adapter.exists(path);
-		if (!exists) {
+		if (!this.vault.getAbstractFileByPath(path)) {
 			await this.vault.createFolder(path);
 		}
 	}

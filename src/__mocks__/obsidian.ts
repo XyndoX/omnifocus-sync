@@ -9,6 +9,8 @@ export class Notice {
 }
 
 export class Plugin {}
+export class TFile {}
+export class TFolder {}
 export class PluginSettingTab {}
 
 export class Modal {

@@ -16,7 +16,7 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// Connection section
-		containerEl.createEl("h3", { text: "Connection" });
+		new Setting(containerEl).setName("Connection").setHeading();
 
 		new Setting(containerEl)
 			.setName("Test Connection")
@@ -37,7 +37,7 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 			);
 
 		// Data section
-		containerEl.createEl("h3", { text: "Data" });
+		new Setting(containerEl).setName("Data").setHeading();
 
 		new Setting(containerEl)
 			.setName("Sync folder")
@@ -66,7 +66,7 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 			);
 
 		// Sync section
-		containerEl.createEl("h3", { text: "Sync" });
+		new Setting(containerEl).setName("Sync").setHeading();
 
 		new Setting(containerEl)
 			.setName("Sync interval")
@@ -96,7 +96,7 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 			);
 
 		// Rendering section
-		containerEl.createEl("h3", { text: "Rendering" });
+		new Setting(containerEl).setName("Rendering").setHeading();
 
 		new Setting(containerEl)
 			.setName("Show due date")
@@ -136,14 +136,14 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 			);
 
 		// Actions section
-		containerEl.createEl("h3", { text: "Actions" });
+		new Setting(containerEl).setName("Actions").setHeading();
 
 		new Setting(containerEl)
 			.setName("Sync now")
 			.setDesc("Pull latest data from OmniFocus.")
 			.addButton((btn) =>
 				btn
-					.setButtonText("Sync Now")
+					.setButtonText("Sync now")
 					.setCta()
 					.onClick(() => {
 						this.plugin.syncNow();

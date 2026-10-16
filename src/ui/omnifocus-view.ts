@@ -122,7 +122,7 @@ export class OmniFocusView extends ItemView {
 		// Sync button
 		const syncBtn = actions.createEl("button", {
 			cls: "of-icon-btn",
-			attr: { "aria-label": "Sync Now" },
+			attr: { "aria-label": "Sync now" },
 		});
 		setIcon(syncBtn, "refresh-cw");
 		syncBtn.addEventListener("click", () => this.doSync(syncBtn));
@@ -483,8 +483,7 @@ export class OmniFocusView extends ItemView {
 		const input = document.createElement("input");
 		input.type = "date";
 		input.value = task.dueDate ? task.dueDate.slice(0, 10) : "";
-		input.style.position = "fixed";
-		input.style.opacity = "0";
+		input.classList.add("omnifocus-bridge-hidden-picker");
 		document.body.appendChild(input);
 		input.showPicker();
 		input.addEventListener("change", async () => {
