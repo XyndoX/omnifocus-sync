@@ -1,12 +1,30 @@
-# OmniFocus Bridge for Obsidian
+<p align="center">
+  <img src="assets/logo.svg" width="160" alt="OmniFocus Bridge logo — a checked task linked by a bridge to a note">
+</p>
 
-Bidirectional sync between OmniFocus 4 Pro and Obsidian.
+<h1 align="center">OmniFocus Bridge</h1>
+
+<p align="center">
+  <em>Bidirectional sync between OmniFocus 4 Pro and Obsidian.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Obsidian-plugin-1d5262?style=flat-square" alt="Obsidian plugin">
+  <img src="https://img.shields.io/badge/platform-macOS%20only-1d5262?style=flat-square" alt="macOS only">
+  <img src="https://img.shields.io/badge/requires-OmniFocus%204%20Pro-f4b544?style=flat-square" alt="Requires OmniFocus 4 Pro">
+  <img src="https://img.shields.io/github/license/XyndoX/omnifocus-sync?style=flat-square&color=f4b544" alt="MIT license">
+</p>
+
+---
+
+An [Obsidian](https://obsidian.md) plugin that mirrors your OmniFocus projects, tasks, and tags into your vault as markdown, and writes completions, flags, and dates back to OmniFocus.
 
 ## Features
 
 - **One-way sync**: OmniFocus to Obsidian -- projects, tasks, and tags with full folder hierarchy
 - **Write-back**: Complete tasks, toggle flags, set due/defer dates directly from Obsidian
 - **Quick Add**: Create new OmniFocus tasks without leaving Obsidian
+- **Side panel**: An OmniFocus view with Today, Inbox, Projects, and Dashboard tabs
 - **Auto-sync**: Configurable interval (1m / 5m / 15m / 30m), plus sync on startup and on file open
 - **Incremental sync**: Only updates changed projects, keeping syncs fast
 - **Dashboard**: Auto-generated overview with overdue, due today, due this week, and flagged sections
@@ -22,11 +40,28 @@ Bidirectional sync between OmniFocus 4 Pro and Obsidian.
 
 ## Installation
 
-1. Open **Settings > Community plugins**
-2. Search for **OmniFocus Bridge**
-3. Click **Install**, then **Enable**
+> OmniFocus Bridge is **not yet in the Obsidian Community plugins directory** (submission pending), so searching for it inside Obsidian won't find it yet. Build it from source for now.
 
-### Manual Installation
+### Build from source
+
+Requires [Node.js](https://nodejs.org) and git.
+
+```bash
+git clone https://github.com/XyndoX/omnifocus-sync.git
+cd omnifocus-sync
+npm install
+npm run build
+```
+
+Then:
+
+1. Create a folder called `omnifocus-bridge` inside your vault's `.obsidian/plugins/` directory
+2. Copy `main.js`, `manifest.json`, and `styles.css` from the repo root into that folder
+3. Restart Obsidian and enable **OmniFocus Bridge** in **Settings > Community plugins** (turn off Restricted mode first if it's on)
+
+### Manual install from a release
+
+Once a release is published on the [Releases page](https://github.com/XyndoX/omnifocus-sync/releases):
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release
 2. Create a folder called `omnifocus-bridge` inside your vault's `.obsidian/plugins/` directory
@@ -51,6 +86,7 @@ Open the command palette (`Cmd+P`) and search for any of the following:
 |---------|-------------|
 | **Sync Now** | Pull latest data from OmniFocus and update markdown files |
 | **Open Sync Folder** | Reveal the OmniFocus sync folder in the file explorer |
+| **Open OmniFocus Panel** | Open the OmniFocus side panel (Today, Inbox, Projects, Dashboard) |
 | **OmniFocus: Generate Dashboard** | Create or update `Dashboard.md` with overdue, due today, due this week, and flagged task sections |
 | **OmniFocus: Quick Add Task** | Open a modal to create a new task in OmniFocus (auto-detects project from current file) |
 | **OmniFocus: Complete/Reopen Task** | Toggle the completion state of the task on the current line |

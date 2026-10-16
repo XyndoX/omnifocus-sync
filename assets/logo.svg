@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="OmniFocus Bridge logo — a checked task linked by a bridge arc to a note">
+  <defs>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f6f7e"/>
+      <stop offset="1" stop-color="#123544"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#efe4cf"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="url(#deep)"/>
+
+  <!-- the bridge: one arc carrying changes both ways -->
+  <path d="M190 236 L190 170 M256 236 L256 138 M322 236 L322 170" stroke="#f4b544" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+  <line x1="150" y1="236" x2="362" y2="236" stroke="#f4b544" stroke-width="14" stroke-linecap="round"/>
+  <path d="M138 236 C 170 96, 342 96, 374 236" fill="none" stroke="#f4b544" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- shadow -->
+  <ellipse cx="256" cy="420" rx="170" ry="10" fill="#071c25" opacity="0.45"/>
+
+  <!-- left pier: a completed task -->
+  <circle cx="138" cy="322" r="88" fill="url(#paper)"/>
+  <path d="M96 324 L128 356 L184 290" fill="none" stroke="#1d5262" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- right pier: a note -->
+  <path d="M300 222 L410 222 L450 262 L450 412 Q450 420 442 420 L308 420 Q300 420 300 412 Z" fill="url(#paper)"/>
+  <path d="M410 222 L410 262 L450 262 Z" fill="#d9c9aa"/>
+  <g stroke="#1d5262" stroke-width="14" stroke-linecap="round">
+    <line x1="330" y1="300" x2="420" y2="300"/>
+    <line x1="330" y1="340" x2="420" y2="340"/>
+    <line x1="330" y1="380" x2="388" y2="380"/>
+  </g>
+</svg>

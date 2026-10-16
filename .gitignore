@@ -5,3 +5,5 @@ data.json
 .DS_Store
 cache.json
 id-map.json
+.hotreload
+.claude/
