@@ -40,7 +40,14 @@ An [Obsidian](https://obsidian.md) plugin that mirrors your OmniFocus projects, 
 
 ## Installation
 
-> OmniFocus Bridge is **not yet in the Obsidian Community plugins directory** (submission pending), so searching for it inside Obsidian won't find it yet. Build it from source for now.
+> OmniFocus Bridge is **not yet in the Obsidian Community plugins directory** (submission pending), so searching for it inside Obsidian won't find it yet. Install it from a release instead.
+
+### Install from a release
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/XyndoX/omnifocus-sync/releases/latest)
+2. Create a folder called `omnifocus-bridge` inside your vault's `.obsidian/plugins/` directory
+3. Copy the downloaded files into that folder
+4. Restart Obsidian and enable **OmniFocus Bridge** in **Settings > Community plugins** (turn off Restricted mode first if it's on)
 
 ### Build from source
 
@@ -53,20 +60,7 @@ npm install
 npm run build
 ```
 
-Then:
-
-1. Create a folder called `omnifocus-bridge` inside your vault's `.obsidian/plugins/` directory
-2. Copy `main.js`, `manifest.json`, and `styles.css` from the repo root into that folder
-3. Restart Obsidian and enable **OmniFocus Bridge** in **Settings > Community plugins** (turn off Restricted mode first if it's on)
-
-### Manual install from a release
-
-Once a release is published on the [Releases page](https://github.com/XyndoX/omnifocus-sync/releases):
-
-1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release
-2. Create a folder called `omnifocus-bridge` inside your vault's `.obsidian/plugins/` directory
-3. Copy the downloaded files into that folder
-4. Restart Obsidian and enable the plugin in Settings > Community plugins
+Then copy `main.js`, `manifest.json`, and `styles.css` from the repo root into `<vault>/.obsidian/plugins/omnifocus-bridge/` and enable the plugin as above.
 
 ## Usage
 
