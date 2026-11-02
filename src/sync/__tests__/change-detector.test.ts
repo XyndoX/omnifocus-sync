@@ -19,7 +19,21 @@ vi.mock("../../bridge/jxa-write-scripts", () => ({
 // Mock obsidian Notice
 vi.mock("obsidian", () => ({
 	Notice: vi.fn(),
+	TFile: class { path = ""; extension = ""; },
 }));
+
+import { TFile } from "obsidian";
+
+// Provide a `window` global so `window.setTimeout` / `window.clearTimeout`
+// work under the node test environment (and are controlled by fake timers).
+if (typeof window === "undefined") {
+	(globalThis as any).window = globalThis;
+}
+
+/** Build a fake vault file the detector's instanceof/extension filter accepts. */
+function vaultFile(path: string): TFile {
+	return Object.assign(new TFile(), { path, extension: path.split(".").pop() ?? "" });
+}
 
 import { runJXA } from "../../bridge/jxa-runner";
 import {
@@ -175,9 +189,7 @@ describe("ChangeDetector", () => {
 			detector.start();
 
 			// File inside sync folder -- should be processed
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 			await vi.waitFor(() => {
@@ -188,9 +200,7 @@ describe("ChangeDetector", () => {
 		it("ignores files outside the sync folder", async () => {
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "Other/notes.md",
-			});
+			mockVault._trigger("modify", vaultFile("Other/notes.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -201,9 +211,7 @@ describe("ChangeDetector", () => {
 		it("ignores non-markdown files inside the sync folder", async () => {
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/data.json",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/data.json"));
 
 			vi.advanceTimersByTime(600);
 
@@ -228,9 +236,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Inbox.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Inbox.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -258,9 +264,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Inbox.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Inbox.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -284,9 +288,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -313,9 +315,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Inbox.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Inbox.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -340,9 +340,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Inbox.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Inbox.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -376,9 +374,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Test Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Test Project.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -404,7 +400,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			const file = { path: "OmniFocus/Project.md" };
+			const file = vaultFile("OmniFocus/Project.md");
 
 			// Fire modify events rapidly
 			mockVault._trigger("modify", file);
@@ -440,12 +436,8 @@ describe("ChangeDetector", () => {
 			detector.start();
 
 			// Modify two different files
-			mockVault._trigger("modify", {
-				path: "OmniFocus/File1.md",
-			});
-			mockVault._trigger("modify", {
-				path: "OmniFocus/File2.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/File1.md"));
+			mockVault._trigger("modify", vaultFile("OmniFocus/File2.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -474,9 +466,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -501,9 +491,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -544,9 +532,7 @@ describe("ChangeDetector", () => {
 			detector.start();
 			detector.stop();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 
@@ -561,9 +547,7 @@ describe("ChangeDetector", () => {
 
 			detector.start();
 
-			mockVault._trigger("modify", {
-				path: "OmniFocus/Project.md",
-			});
+			mockVault._trigger("modify", vaultFile("OmniFocus/Project.md"));
 
 			vi.advanceTimersByTime(600);
 

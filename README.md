@@ -36,7 +36,7 @@ An [Obsidian](https://obsidian.md) plugin that mirrors your OmniFocus projects, 
 
 - **macOS** (the plugin uses OmniFocus's Automation API via `osascript`)
 - **OmniFocus 4 Pro** (the Pro edition is required for JavaScript automation)
-- **Obsidian Desktop** (v1.0.0 or later)
+- **Obsidian Desktop** (v1.13.0 or later)
 
 ## Installation
 

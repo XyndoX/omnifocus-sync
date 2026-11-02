@@ -40,7 +40,6 @@ export default class OmniFocusBridgePlugin extends Plugin {
 	private stopChangeDetector: (() => void) | null = null;
 	private isSyncing = false;
 	private lastFileOpenSync = 0;
-	private omnifocusView: OmniFocusView | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -92,15 +91,10 @@ export default class OmniFocusBridgePlugin extends Plugin {
 		this.addSettingTab(new OmniFocusBridgeSettingTab(this.app, this));
 
 		// Side panel view
-		this.registerView(VIEW_TYPE, (leaf) => {
-			this.omnifocusView = new OmniFocusView(
-				leaf,
-				this.cache!,
-				this.settings,
-				() => this.syncNow()
-			);
-			return this.omnifocusView;
-		});
+		this.registerView(
+			VIEW_TYPE,
+			(leaf) => new OmniFocusView(leaf, this.cache!, this.settings, () => this.syncNow())
+		);
 
 		// Status bar
 		this.statusBarEl = this.addStatusBarItem();
@@ -182,7 +176,7 @@ export default class OmniFocusBridgePlugin extends Plugin {
 		// Sync on startup (with delay to let Obsidian finish loading)
 		if (this.settings.syncOnStartup) {
 			const startupTimerId = window.setTimeout(() => {
-				this.syncNow();
+				void this.syncNow();
 			}, 2000);
 			this.register(() => window.clearTimeout(startupTimerId));
 		}
@@ -198,7 +192,7 @@ export default class OmniFocusBridgePlugin extends Plugin {
 				if (now - this.lastFileOpenSync < 30_000) return;
 
 				this.lastFileOpenSync = now;
-				this.syncNow();
+				void this.syncNow();
 			})
 		);
 	}
@@ -206,13 +200,13 @@ export default class OmniFocusBridgePlugin extends Plugin {
 	async activatePanel(): Promise<void> {
 		const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE);
 		if (existing.length > 0) {
-			this.app.workspace.revealLeaf(existing[0]!);
+			await this.app.workspace.revealLeaf(existing[0]!);
 			return;
 		}
 		const leaf = this.app.workspace.getRightLeaf(false);
 		if (leaf) {
 			await leaf.setViewState({ type: VIEW_TYPE, active: true });
-			this.app.workspace.revealLeaf(leaf);
+			await this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
@@ -256,8 +250,8 @@ export default class OmniFocusBridgePlugin extends Plugin {
 			new Notice(`Synced ${taskCount} tasks across ${projectCount} projects`);
 			await this.updateStatusBar();
 			// Refresh the side panel if open
-			if (this.omnifocusView) {
-				this.omnifocusView.refresh();
+			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
+				if (leaf.view instanceof OmniFocusView) void leaf.view.refresh();
 			}
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
@@ -299,7 +293,8 @@ export default class OmniFocusBridgePlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const data = (await this.loadData()) as Partial<PluginSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 	}
 
 	async saveSettings(): Promise<void> {

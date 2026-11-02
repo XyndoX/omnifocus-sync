@@ -1,8 +1,8 @@
 {
 	"id": "omnifocus-bridge",
 	"name": "OmniFocus Bridge",
-	"version": "1.0.3",
-	"minAppVersion": "1.0.0",
+	"version": "1.0.4",
+	"minAppVersion": "1.13.0",
 	"description": "Sync OmniFocus 4 Pro projects and tasks into your vault and write changes back.",
 	"author": "Christian Reinhardt",
 	"authorUrl": "https://github.com/XyndoX",

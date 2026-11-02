@@ -1,5 +1,5 @@
-import { Notice } from "obsidian";
-import type { Vault, TAbstractFile, TFile, EventRef } from "obsidian";
+import { Notice, TFile } from "obsidian";
+import type { Vault, TAbstractFile, EventRef } from "obsidian";
 import type { PluginSettings, OFTask, CacheData } from "../types";
 import type { CacheManager } from "../data/cache-manager";
 import { runJXA } from "../bridge/jxa-runner";
@@ -27,7 +27,7 @@ interface ParsedTask {
  */
 export class ChangeDetector {
 	private eventRef: EventRef | null = null;
-	private debounceTimers: Map<string, ReturnType<typeof setTimeout>> =
+	private debounceTimers: Map<string, number> =
 		new Map();
 	private readonly DEBOUNCE_MS = 500;
 	private _suppressed = false;
@@ -73,7 +73,7 @@ export class ChangeDetector {
 			this.eventRef = null;
 		}
 		for (const timer of this.debounceTimers.values()) {
-			clearTimeout(timer);
+			window.clearTimeout(timer);
 		}
 		this.debounceTimers.clear();
 	}
@@ -87,7 +87,7 @@ export class ChangeDetector {
 		if (this._suppressed) return;
 
 		// Only process .md files inside the sync folder
-		if (!file.path.endsWith(".md")) return;
+		if (!(file instanceof TFile) || file.extension !== "md") return;
 		if (!file.path.startsWith(this.settings.syncFolderPath + "/") &&
 			file.path !== this.settings.syncFolderPath) {
 			return;
@@ -96,12 +96,12 @@ export class ChangeDetector {
 		// Per-file debounce
 		const existing = this.debounceTimers.get(file.path);
 		if (existing) {
-			clearTimeout(existing);
+			window.clearTimeout(existing);
 		}
 
-		const timer = setTimeout(() => {
+		const timer = window.setTimeout(() => {
 			this.debounceTimers.delete(file.path);
-			this.processFile(file as TFile).catch((err) => {
+			this.processFile(file).catch((err) => {
 				console.error("ChangeDetector: error processing file", err);
 			});
 		}, this.DEBOUNCE_MS);

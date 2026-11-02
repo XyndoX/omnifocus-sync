@@ -151,14 +151,14 @@ function renderAsList(
 		checkbox.checked = task.completed;
 		checkbox.disabled = true;
 
-		const span = li.createEl("span", { text: ` ${task.name}` });
+		li.createSpan({ text: ` ${task.name}` });
 
 		if (task.flagged) {
-			li.createEl("span", { text: " \uD83D\uDEA9", cls: "omnifocus-flag" });
+			li.createSpan({ text: " \uD83D\uDEA9", cls: "omnifocus-flag" });
 		}
 
 		if (settings.showDueDate && task.dueDate) {
-			li.createEl("span", {
+			li.createSpan({
 				text: ` \uD83D\uDCC5 ${formatDate(task.dueDate)}`,
 				cls: "omnifocus-due",
 			});
@@ -166,14 +166,14 @@ function renderAsList(
 
 		if (settings.showTags && task.tags.length > 0) {
 			const tagStr = task.tags.map((t) => t.name).join(", ");
-			li.createEl("span", {
+			li.createSpan({
 				text: ` \uD83C\uDFF7\uFE0F ${tagStr}`,
 				cls: "omnifocus-tags",
 			});
 		}
 
 		if (settings.showEstimate && task.estimatedMinutes) {
-			li.createEl("span", {
+			li.createSpan({
 				text: ` \u23F1\uFE0F ${task.estimatedMinutes}min`,
 				cls: "omnifocus-estimate",
 			});

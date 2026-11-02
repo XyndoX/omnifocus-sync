@@ -1,7 +1,11 @@
 // src/settings.ts
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { Notice, PluginSettingTab } from "obsidian";
+import type { App, SettingDefinitionItem } from "obsidian";
 import type OmniFocusBridgePlugin from "./main";
+import type { PluginSettings } from "./types";
 import { isOmniFocusAvailable } from "./bridge/jxa-runner";
+
+const required = (value: string) => (value.trim() ? undefined : "This field is required.");
 
 export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 	constructor(
@@ -11,143 +15,118 @@ export class OmniFocusBridgeSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+	override getSettingDefinitions(): SettingDefinitionItem<keyof PluginSettings>[] {
+		return [
+			{
+				type: "group",
+				heading: "Connection",
+				items: [
+					{
+						name: "Test connection",
+						desc: "Verify that OmniFocus is running and accessible.",
+						render: (setting) => {
+							setting.addButton((btn) =>
+								btn.setButtonText("Test").onClick(async () => {
+									btn.setDisabled(true);
+									btn.setButtonText("Testing...");
+									const ok = await isOmniFocusAvailable();
+									new Notice(
+										ok
+											? "Connected to OmniFocus successfully!"
+											: "Could not connect to OmniFocus. Is it running?"
+									);
+									btn.setDisabled(false);
+									btn.setButtonText("Test");
+								})
+							);
+						},
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Data",
+				items: [
+					{
+						name: "Sync folder",
+						desc: "Vault folder where OmniFocus data is stored.",
+						control: { type: "text", key: "syncFolderPath", placeholder: "OmniFocus", validate: required },
+					},
+					{
+						name: "Tag prefix",
+						desc: "Prefix for OmniFocus tags (e.g. #of/TagName).",
+						control: { type: "text", key: "tagPrefix", placeholder: "of", validate: required },
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Sync",
+				items: [
+					{
+						name: "Sync interval",
+						desc: "How often to automatically sync with OmniFocus.",
+						control: {
+							type: "dropdown",
+							key: "syncInterval",
+							options: {
+								manual: "Manual",
+								"1": "Every 1 minute",
+								"5": "Every 5 minutes",
+								"15": "Every 15 minutes",
+								"30": "Every 30 minutes",
+							},
+						},
+					},
+					{
+						name: "Sync on startup",
+						desc: "Automatically sync when Obsidian starts.",
+						control: { type: "toggle", key: "syncOnStartup" },
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Rendering",
+				items: [
+					{ name: "Show due date", control: { type: "toggle", key: "showDueDate" } },
+					{ name: "Show tags", control: { type: "toggle", key: "showTags" } },
+					{ name: "Show time estimate", control: { type: "toggle", key: "showEstimate" } },
+					{
+						name: "Show OmniFocus link",
+						desc: "Add deep link to each task (opens task in OmniFocus).",
+						control: { type: "toggle", key: "showOFLink" },
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Actions",
+				items: [
+					{
+						name: "Sync now",
+						desc: "Pull latest data from OmniFocus.",
+						render: (setting) => {
+							setting.addButton((btn) =>
+								btn
+									.setButtonText("Sync now")
+									.setCta()
+									.onClick(() => void this.plugin.syncNow())
+							);
+						},
+					},
+				],
+			},
+		];
+	}
 
-		// Connection section
-		new Setting(containerEl).setName("Connection").setHeading();
+	override getControlValue(key: keyof PluginSettings): unknown {
+		return this.plugin.settings[key];
+	}
 
-		new Setting(containerEl)
-			.setName("Test Connection")
-			.setDesc("Verify that OmniFocus is running and accessible.")
-			.addButton((btn) =>
-				btn.setButtonText("Test").onClick(async () => {
-					btn.setDisabled(true);
-					btn.setButtonText("Testing...");
-					const ok = await isOmniFocusAvailable();
-					if (ok) {
-						new Notice("Connected to OmniFocus successfully!");
-					} else {
-						new Notice("Could not connect to OmniFocus. Is it running?");
-					}
-					btn.setDisabled(false);
-					btn.setButtonText("Test");
-				})
-			);
-
-		// Data section
-		new Setting(containerEl).setName("Data").setHeading();
-
-		new Setting(containerEl)
-			.setName("Sync folder")
-			.setDesc("Vault folder where OmniFocus data is stored.")
-			.addText((text) =>
-				text
-					.setPlaceholder("OmniFocus")
-					.setValue(this.plugin.settings.syncFolderPath)
-					.onChange(async (value) => {
-						this.plugin.settings.syncFolderPath = value || "OmniFocus";
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Tag prefix")
-			.setDesc("Prefix for OmniFocus tags (e.g. #of/TagName).")
-			.addText((text) =>
-				text
-					.setPlaceholder("of")
-					.setValue(this.plugin.settings.tagPrefix)
-					.onChange(async (value) => {
-						this.plugin.settings.tagPrefix = value || "of";
-						await this.plugin.saveSettings();
-					})
-			);
-
-		// Sync section
-		new Setting(containerEl).setName("Sync").setHeading();
-
-		new Setting(containerEl)
-			.setName("Sync interval")
-			.setDesc("How often to automatically sync with OmniFocus.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("manual", "Manual")
-					.addOption("1", "Every 1 minute")
-					.addOption("5", "Every 5 minutes")
-					.addOption("15", "Every 15 minutes")
-					.addOption("30", "Every 30 minutes")
-					.setValue(this.plugin.settings.syncInterval)
-					.onChange(async (value) => {
-						this.plugin.settings.syncInterval = value as "manual" | "1" | "5" | "15" | "30";
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Sync on startup")
-			.setDesc("Automatically sync when Obsidian starts.")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.syncOnStartup).onChange(async (value) => {
-					this.plugin.settings.syncOnStartup = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		// Rendering section
-		new Setting(containerEl).setName("Rendering").setHeading();
-
-		new Setting(containerEl)
-			.setName("Show due date")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showDueDate).onChange(async (value) => {
-					this.plugin.settings.showDueDate = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Show tags")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showTags).onChange(async (value) => {
-					this.plugin.settings.showTags = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Show time estimate")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showEstimate).onChange(async (value) => {
-					this.plugin.settings.showEstimate = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Show OmniFocus link")
-			.setDesc("Add deep link to each task (opens task in OmniFocus).")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showOFLink).onChange(async (value) => {
-					this.plugin.settings.showOFLink = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		// Actions section
-		new Setting(containerEl).setName("Actions").setHeading();
-
-		new Setting(containerEl)
-			.setName("Sync now")
-			.setDesc("Pull latest data from OmniFocus.")
-			.addButton((btn) =>
-				btn
-					.setButtonText("Sync now")
-					.setCta()
-					.onClick(() => {
-						this.plugin.syncNow();
-					})
-			);
+	// saveSettings also restarts the scheduler, which the default persistence would skip.
+	override async setControlValue(key: keyof PluginSettings, value: unknown): Promise<void> {
+		Object.assign(this.plugin.settings, { [key]: value });
+		await this.plugin.saveSettings();
 	}
 }

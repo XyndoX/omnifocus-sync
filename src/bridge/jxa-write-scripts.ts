@@ -129,7 +129,7 @@ export function buildCreateTaskScript(opts: {
 	if (!proj) { throw new Error('Project not found: ${safeProjectId}'); }
 	var newTask = new Task('${safeName}', proj);`;
 	} else {
-		targetSnippet = `var newTask = new Task('${safeName}', inbox);`;
+		targetSnippet = `var newTask = new Task('${safeName}');`;
 	}
 
 	return `(() => {

@@ -32,7 +32,7 @@ export class QuickAddModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h3", { text: "Quick Add OmniFocus Task" });
+		contentEl.createEl("h3", { text: "Quick add OmniFocus task" });
 
 		// Load cached projects for the dropdown
 		const cacheData = await this.cache.load();
@@ -114,10 +114,10 @@ export class QuickAddModal extends Modal {
 		new Setting(contentEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText("Create Task")
+					.setButtonText("Create task")
 					.setCta()
 					.onClick(() => {
-						this.submitTask();
+						void this.submitTask();
 					})
 			)
 			.addButton((btn) =>

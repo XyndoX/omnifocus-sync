@@ -39,8 +39,8 @@ export class SyncScheduler {
 		}
 
 		this.timerId = window.setInterval(() => {
-			this.syncFn();
-		}, ms) as unknown as number;
+			void this.syncFn();
+		}, ms);
 	}
 
 	/**

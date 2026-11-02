@@ -1,4 +1,5 @@
-import type { Vault, TFile } from "obsidian";
+import { TFile } from "obsidian";
+import type { Vault } from "obsidian";
 import type {
 	OFTask,
 	OFProject,
@@ -44,9 +45,9 @@ export class SyncEngine {
 		// Wait if change detector is actively writing to OmniFocus
 		if (this.changeDetector?.isProcessing) {
 			await new Promise<void>((resolve) => {
-				const check = setInterval(() => {
+				const check = window.setInterval(() => {
 					if (!this.changeDetector?.isProcessing) {
-						clearInterval(check);
+						window.clearInterval(check);
 						resolve();
 					}
 				}, 100);
@@ -63,19 +64,19 @@ export class SyncEngine {
 		let tags: OFTag[];
 
 		try {
-			projects = JSON.parse(projectsJson);
+			projects = JSON.parse(projectsJson) as OFProject[];
 		} catch {
 			throw new Error("Failed to parse OmniFocus project data. The response was invalid.");
 		}
 
 		try {
-			tasks = JSON.parse(tasksJson);
+			tasks = JSON.parse(tasksJson) as OFTask[];
 		} catch {
 			throw new Error("Failed to parse OmniFocus task data. The response was invalid.");
 		}
 
 		try {
-			tags = JSON.parse(tagsJson);
+			tags = JSON.parse(tagsJson) as OFTag[];
 		} catch {
 			throw new Error("Failed to parse OmniFocus tag data. The response was invalid.");
 		}
@@ -105,10 +106,10 @@ export class SyncEngine {
 					const statusJson = await runJXA(
 						buildCheckTaskStatusScript(missingIds)
 					);
-					const statuses: Record<
+					const statuses = JSON.parse(statusJson) as Record<
 						string,
 						Omit<OFTask, "id"> & { completed: boolean }
-					> = JSON.parse(statusJson);
+					>;
 
 					for (const id of missingIds) {
 						const status = statuses[id];
@@ -344,8 +345,8 @@ export class SyncEngine {
 
 	private async writeFile(path: string, content: string): Promise<void> {
 		const existing = this.vault.getAbstractFileByPath(path);
-		if (existing && "extension" in existing) {
-			await this.vault.modify(existing as TFile, content);
+		if (existing instanceof TFile) {
+			await this.vault.modify(existing, content);
 		} else {
 			await this.vault.create(path, content);
 		}

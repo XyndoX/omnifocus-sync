@@ -7,7 +7,6 @@ import {
 	buildMarkIncompleteScript,
 	buildSetFlagScript,
 	buildSetDueDateScript,
-	buildSetDeferDateScript,
 	buildCreateTaskScript,
 } from "../bridge/jxa-write-scripts";
 
@@ -114,7 +113,7 @@ export class OmniFocusView extends ItemView {
 		// Quick add button
 		const addBtn = actions.createEl("button", {
 			cls: "of-icon-btn",
-			attr: { "aria-label": "Quick Add Task" },
+			attr: { "aria-label": "Quick add task" },
 		});
 		setIcon(addBtn, "plus");
 		addBtn.addEventListener("click", () => this.showQuickAdd());
@@ -125,7 +124,7 @@ export class OmniFocusView extends ItemView {
 			attr: { "aria-label": "Sync now" },
 		});
 		setIcon(syncBtn, "refresh-cw");
-		syncBtn.addEventListener("click", () => this.doSync(syncBtn));
+		syncBtn.addEventListener("click", () => void this.doSync(syncBtn));
 
 		// Last sync
 		if (data?.syncedAt) {
@@ -154,7 +153,7 @@ export class OmniFocusView extends ItemView {
 			tab.createSpan({ text: def.label });
 			tab.addEventListener("click", () => {
 				this.activeTab = def.id;
-				this.render();
+				void this.render();
 			});
 		}
 	}
@@ -265,7 +264,7 @@ export class OmniFocusView extends ItemView {
 			} else {
 				this.collapsedProjects.add(project.id);
 			}
-			this.render();
+			void this.render();
 		});
 
 		if (!isCollapsed && activeTasks.length > 0) {
@@ -296,19 +295,19 @@ export class OmniFocusView extends ItemView {
 
 		this.renderCard(grid, "Overdue", overdue, "of-card-overdue", () => {
 			this.activeTab = "today";
-			this.render();
+			void this.render();
 		});
 		this.renderCard(grid, "Due Today", dueToday, "of-card-today", () => {
 			this.activeTab = "today";
-			this.render();
+			void this.render();
 		});
 		this.renderCard(grid, "Flagged", flagged, "of-card-flagged", () => {
 			this.activeTab = "today";
-			this.render();
+			void this.render();
 		});
 		this.renderCard(grid, "Inbox", inbox, "of-card-inbox", () => {
 			this.activeTab = "inbox";
-			this.render();
+			void this.render();
 		});
 		this.renderCard(grid, "Active Tasks", totalActive, "", null);
 		this.renderCard(grid, "Projects", projects, "", null);
@@ -385,7 +384,7 @@ export class OmniFocusView extends ItemView {
 			cls: "of-task-checkbox",
 		});
 		checkbox.checked = task.completed;
-		checkbox.addEventListener("change", () => this.toggleComplete(task, checkbox.checked));
+		checkbox.addEventListener("change", () => void this.toggleComplete(task, checkbox.checked));
 
 		// Content
 		const content = row.createDiv({ cls: "of-task-content" });
@@ -429,7 +428,7 @@ export class OmniFocusView extends ItemView {
 		setIcon(flagBtn, "flag");
 		flagBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
-			this.toggleFlag(task);
+			void this.toggleFlag(task);
 		});
 
 		// Due date button
@@ -460,7 +459,7 @@ export class OmniFocusView extends ItemView {
 			task.completed = completed;
 			await this.render();
 			// Full sync in background
-			this.syncFn();
+			void this.syncFn();
 		} catch (err) {
 			new Notice(`Failed: ${err instanceof Error ? err.message : String(err)}`);
 			await this.render();
@@ -473,38 +472,35 @@ export class OmniFocusView extends ItemView {
 			task.flagged = !task.flagged;
 			new Notice(task.flagged ? "Task flagged" : "Task unflagged");
 			await this.render();
-			this.syncFn();
+			void this.syncFn();
 		} catch (err) {
 			new Notice(`Failed: ${err instanceof Error ? err.message : String(err)}`);
 		}
 	}
 
 	private promptDueDate(task: OFTask): void {
-		const input = document.createElement("input");
-		input.type = "date";
+		const input = document.body.createEl("input", {
+			type: "date",
+			cls: "omnifocus-bridge-hidden-picker",
+		});
 		input.value = task.dueDate ? task.dueDate.slice(0, 10) : "";
-		input.classList.add("omnifocus-bridge-hidden-picker");
-		document.body.appendChild(input);
 		input.showPicker();
-		input.addEventListener("change", async () => {
+		const onChange = async () => {
 			const val = input.value;
-			document.body.removeChild(input);
+			input.remove();
 			if (!val) return;
 			try {
 				await runJXA(buildSetDueDateScript(task.id, val));
 				task.dueDate = new Date(val).toISOString();
 				new Notice(`Due date set to ${val}`);
 				await this.render();
-				this.syncFn();
+				void this.syncFn();
 			} catch (err) {
 				new Notice(`Failed: ${err instanceof Error ? err.message : String(err)}`);
 			}
-		});
-		input.addEventListener("blur", () => {
-			if (document.body.contains(input)) {
-				document.body.removeChild(input);
-			}
-		});
+		};
+		input.addEventListener("change", () => void onChange());
+		input.addEventListener("blur", () => input.remove());
 	}
 
 	private showQuickAdd(): void {
@@ -535,7 +531,7 @@ export class OmniFocusView extends ItemView {
 				await runJXA(buildCreateTaskScript({ name }));
 				new Notice(`Task "${name}" created`);
 				form.remove();
-				this.syncFn();
+				void this.syncFn();
 			} catch (err) {
 				new Notice(`Failed: ${err instanceof Error ? err.message : String(err)}`);
 				submit.disabled = false;
@@ -543,9 +539,9 @@ export class OmniFocusView extends ItemView {
 			}
 		};
 
-		submit.addEventListener("click", doAdd);
+		submit.addEventListener("click", () => void doAdd());
 		input.addEventListener("keydown", (e) => {
-			if (e.key === "Enter") doAdd();
+			if (e.key === "Enter") void doAdd();
 			if (e.key === "Escape") form.remove();
 		});
 		input.focus();

@@ -95,7 +95,7 @@ describe("buildCreateTaskScript", () => {
 
 	it("creates task in inbox when no projectId provided", () => {
 		const script = buildCreateTaskScript({ name: "Buy milk" });
-		expect(script).toContain("new Task('Buy milk', inbox)");
+		expect(script).toContain("new Task('Buy milk')");
 		expect(script).not.toContain("flattenedProjects");
 	});
 
@@ -380,10 +380,11 @@ describe("all write scripts", () => {
 			const usesFlattenedTasks = script.includes("flattenedTasks");
 			const usesFlattenedProjects = script.includes("flattenedProjects");
 			const usesFlattenedTags = script.includes("flattenedTags");
-			const usesInbox = script.includes("inbox");
+			const usesInbox = script.includes("new Task(");
 			expect(
 				usesFlattenedTasks || usesFlattenedProjects || usesFlattenedTags || usesInbox
 			).toBe(true);
+			expect(script).not.toContain("document.");
 		}
 	});
 });

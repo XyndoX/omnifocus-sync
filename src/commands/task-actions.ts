@@ -1,6 +1,6 @@
 // src/commands/task-actions.ts
 import { Notice } from "obsidian";
-import type { Plugin, MarkdownView } from "obsidian";
+import type { Plugin } from "obsidian";
 import type { OFTask, PluginSettings } from "../types";
 import type { CacheManager } from "../data/cache-manager";
 import { runJXA } from "../bridge/jxa-runner";
@@ -21,47 +21,6 @@ import { generateDailyNoteSection } from "../renderer/daily-note";
 function getTaskIdFromLine(line: string): string | null {
 	const match = line.match(/<!-- of:([a-zA-Z0-9_-]+) -->/);
 	return match?.[1] ?? null;
-}
-
-/**
- * Get the current editor line text, or null if no active editor.
- */
-function getCurrentLine(plugin: Plugin): string | null {
-	const view = plugin.app.workspace.getActiveViewOfType(
-		// We need the class at runtime but only for getActiveViewOfType.
-		// Using a string-based approach to avoid importing the runtime class.
-		null as unknown as new (...args: unknown[]) => MarkdownView
-	);
-
-	// Fallback: try to access the markdown editor directly
-	const activeView = plugin.app.workspace.activeEditor;
-	if (activeView?.editor) {
-		const cursor = activeView.editor.getCursor();
-		return activeView.editor.getLine(cursor.line);
-	}
-	if (view && "editor" in view) {
-		const editor = (view as unknown as { editor: { getCursor: () => { line: number }; getLine: (n: number) => string } }).editor;
-		const cursor = editor.getCursor();
-		return editor.getLine(cursor.line);
-	}
-	return null;
-}
-
-/**
- * Get the task ID from the current cursor line, showing a Notice if not found.
- */
-function getTaskIdFromCurrentLine(plugin: Plugin): string | null {
-	const line = getCurrentLine(plugin);
-	if (!line) {
-		new Notice("No active editor or cursor line.");
-		return null;
-	}
-	const taskId = getTaskIdFromLine(line);
-	if (!taskId) {
-		new Notice("No OmniFocus task ID found on this line.");
-		return null;
-	}
-	return taskId;
 }
 
 /**
@@ -96,7 +55,7 @@ export function registerTaskCommands(
 				cache,
 				defaultProjectId,
 				() => {
-					triggerSync();
+					void triggerSync();
 				}
 			).open();
 		},
@@ -208,7 +167,7 @@ export function registerTaskCommands(
 
 			// Try to read current due date from cache
 			let currentDueDate: string | null = null;
-			cache.load().then((cacheData) => {
+			void cache.load().then((cacheData) => {
 				if (cacheData) {
 					for (const project of cacheData.projects) {
 						for (const task of project.tasks) {
@@ -267,7 +226,7 @@ export function registerTaskCommands(
 			}
 
 			let currentDeferDate: string | null = null;
-			cache.load().then((cacheData) => {
+			void cache.load().then((cacheData) => {
 				if (cacheData) {
 					for (const project of cacheData.projects) {
 						for (const task of project.tasks) {
